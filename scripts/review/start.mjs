@@ -45,15 +45,36 @@ try {
     'codex',
     [
       'sandbox',
-      '-c',
-      'sandbox_mode="read-only"',
+      '--permission-profile',
+      ':read-only',
+      '--include-managed-config',
       '-C',
       checkout,
+      '--',
       process.execPath,
       '-e',
       probeCode,
     ],
     { encoding: 'utf8', timeout: 30000 },
+  );
+  writeFileSync(
+    join(folder, 'probe-evidence.json'),
+    JSON.stringify(
+      {
+        launchId,
+        base,
+        target,
+        permissionProfile: ':read-only',
+        includeManagedConfig: true,
+        exitCode: probe.status,
+        signal: probe.signal,
+        error: probe.error?.message,
+        stdout: probe.stdout,
+        stderr: probe.stderr,
+      },
+      null,
+      2,
+    ) + '\n',
   );
   if (
     probe.status !== 0 ||

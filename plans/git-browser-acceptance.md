@@ -15,3 +15,7 @@ Date: 2026-11-08. Status: in progress. Scope: FND-01/FND-03 and the browser acce
 Existing first-slice requirements remain authoritative. Calculations stay offline and anonymous; browser fixtures use synthetic inputs; no private balance, allowance, blackout schedule or invitation token enters shared text, logs or analytics. Routing proof is local placeholder behavior, not live invitation authorization. No production deployment is authorized. GitHub branch protection/custom-role runtime discovery are separate from remote connection and remain unverified until tested.
 
 Evidence will be recorded in reports/git-browser-acceptance.md. Review reports must identify an immutable target and actual fresh isolated reviewer; coordinator checks cannot replace review.
+
+## Reviewer-launch compatibility follow-up
+
+The first committed-target attempt exposed a reproducible CLI mismatch: `codex sandbox -C` requires `--permission-profile` on installed Codex 0.166.0. The documented `:read-only` profile with managed requirements included passed an elevated read-success/write-denial probe. Correct only the sandbox-helper invocation and preserve probe diagnostics before failure; keep reviewer execution read-only and approval disabled. Add a regression covering current CLI arguments and fail-closed diagnostic capture, rerun checks and commit before a new review attempt. References: https://learn.chatgpt.com/docs/cli/reference and https://learn.chatgpt.com/docs/permissions . No machine configuration changes are needed.

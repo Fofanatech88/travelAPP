@@ -1,6 +1,6 @@
 # Git baseline and browser acceptance — 2026-11-08
 
-Status: browser verification passed; overall work remains in progress pending a committed baseline and fresh isolated review. No Done, merge, release or native acceptance is granted by this coordinator report. Requirements: AGENTS.md, plans/first-pto-sprint.md, ADR 0002 and docs/engineering/independent-review.md.
+Status: browser verification passed; baseline committed, fresh isolated review pending. No Done, merge, release or native acceptance is granted by this coordinator report. Requirements: AGENTS.md, plans/first-pto-sprint.md, ADR 0002 and docs/engineering/independent-review.md.
 
 ## Scope and Git state
 
@@ -51,3 +51,13 @@ Coordinator visually inspected [PTO result](qa/pto-mobile.png) and [invitation p
 ## Final checks and review
 
 Final precommit checks passed: `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm test` (55 tests), `npm run test:components` (four tests), and `npm run check:secrets`. Final full `npm run test:e2e` passed seven tests in 7.7 seconds with elevated browser/server execution. No application source changed during this task; the new code consists of acceptance assertions in tests/e2e/pto.spec.ts. Fresh immutable-target review remains pending; no reviewer identity or approval is inferred.
+
+Baseline commit: `f0f30d6a34a3c25a43814bcf2d8df651ac57553a` on `chore/verify-pto-foundation`, including all original untracked application/tooling files. Working tree was clean before review. No push or merge performed.
+
+## Review-launch correction
+
+First launcher command: `npm run review:start -- FND-BROWSER-01 25f3ea514101b76d0740ab697e5359216f56722f f0f30d6a34a3c25a43814bcf2d8df651ac57553a plans/first-pto-sprint.md 01a1bdd7-54c2-7241-8846-686976a63a44`. Sandbox execution failed on `.git/worktrees` writes; elevated retry created a detached checkout at `$TMPDIR/together-review-6xawBm/checkout` but stopped before reviewer launch. No reviewer session or approval exists for this attempt.
+
+Reproducing its probe showed CLI exit 2: `the following required arguments were not provided: --permission-profile <NAME>`. The installed CLI is 0.166.0. The [official CLI reference](https://learn.chatgpt.com/docs/cli/reference) documents that sandbox `-C` requires a permission profile; [permission documentation](https://learn.chatgpt.com/docs/permissions) defines built-in `:read-only`. Retesting with `codex sandbox --permission-profile :read-only --include-managed-config -C CHECKOUT -- NODE -e PROBE` exited zero and printed exactly `READ_OK_WRITE_DENIED`; the sentinel remained `source-write-probe`. This validates this elevated OS probe, not a model reviewer session.
+
+Corrected only sandbox-helper arguments, retained managed requirements and added external `probe-evidence.json` capture before any failure. Reviewer execution remains fresh, ephemeral, read-only, with approval disabled. Two integration regressions use a temporary committed Git fixture and fake CLI to verify current required flags, diagnostics and refusal to start a reviewer on startup failure or unexpected source modification. They passed; fake-CLI tests do not prove isolation. A new clean commit and launcher attempt are required after this fix.
