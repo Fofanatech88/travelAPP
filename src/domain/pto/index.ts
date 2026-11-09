@@ -83,6 +83,13 @@ export const ptoInputSchema = z
 
 export type PtoInput = z.infer<typeof ptoInputSchema>;
 export type EmployerHoliday = PtoInput['employerHolidays'][number];
+const assumptions = [
+  'Monday–Friday workweek; Saturday and Sunday are days off.',
+  'Only explicitly confirmed employer holidays reduce PTO.',
+  'Each option is independent and requires employer approval.',
+];
+const rankReason =
+  'Ranked by the fewest PTO days for your chosen length, then the earliest start.';
 export interface VacationOpportunity {
   startDate: string;
   endDate: string;
@@ -93,6 +100,39 @@ export interface VacationOpportunity {
   remainingByYear: Record<number, number>;
   /** PTO avoided specifically through confirmed holidays on scheduled workdays. */
   ptoSaved: number;
+  assumptions: string[];
+  rankReason: string;
+}
+
+export type CalculationResult =
+  | { status: 'invalid'; issues: { path: string[]; message: string }[] }
+  | {
+      status: 'success' | 'no-results';
+      opportunities: VacationOpportunity[];
+      assumptions: string[];
+      explanation: string;
+    };
+
+/** Validated application boundary; optimizePto is the lower-level enumerator. */
+export function calculatePto(value: unknown): CalculationResult {
+  const parsed = ptoInputSchema.safeParse(value);
+  if (!parsed.success)
+    return {
+      status: 'invalid',
+      issues: parsed.error.issues.map((issue) => ({
+        path: issue.path.map(String),
+        message: issue.message,
+      })),
+    };
+  const opportunities = optimizePto(parsed.data);
+  return {
+    status: opportunities.length ? 'success' : 'no-results',
+    opportunities,
+    assumptions: [...assumptions],
+    explanation: opportunities.length
+      ? rankReason
+      : 'Try a shorter break, a wider search period, or review your balance and unavailable dates. Your hard constraints have not been relaxed.',
+  };
 }
 
 /** Exhaustively checks a bounded date range; ranks fixed-duration alternatives
@@ -128,6 +168,8 @@ export function optimizePto(value: PtoInput): VacationOpportunity[] {
       ptoByYear: {},
       remainingByYear: {},
       ptoSaved: 0,
+      assumptions: [...assumptions],
+      rankReason,
     };
     for (let day = start; day <= end; day++) {
       const date = dateFromDay(day);

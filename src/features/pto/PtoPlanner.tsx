@@ -10,8 +10,7 @@ import {
 } from 'react-native';
 import {
   addDays,
-  optimizePto,
-  ptoInputSchema,
+  calculatePto,
   type VacationOpportunity,
 } from '../../domain/pto';
 import { tokens } from '../../design/tokens';
@@ -123,10 +122,10 @@ export function PtoPlanner() {
       employerHolidays: holidays,
       blackouts,
     };
-    const parsed = ptoInputSchema.safeParse(input);
-    if (!parsed.success) {
+    const result = calculatePto(input);
+    if (result.status === 'invalid') {
       setError(
-        parsed.error.issues
+        result.issues
           .map((i) => `${i.path.join('.') || 'Input'}: ${i.message}`)
           .join(' '),
       );
@@ -134,7 +133,7 @@ export function PtoPlanner() {
       return;
     }
     setError('');
-    setOptions(optimizePto(parsed.data));
+    setOptions(result.opportunities);
   }
   async function share(option: VacationOpportunity) {
     const attempt = ++shareAttempt.current;
@@ -381,7 +380,7 @@ export function PtoPlanner() {
           </Text>
           <Text style={styles.body}>
             {options.length
-              ? 'Ranked by the fewest PTO days for your chosen length, then the earliest start.'
+              ? options[0]?.rankReason
               : 'Try a shorter break, a wider search period, or review your balance and unavailable dates. Your hard constraints have not been relaxed.'}
           </Text>
           {options.map((option, index) => (

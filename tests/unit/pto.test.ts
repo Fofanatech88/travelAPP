@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   addDays,
+  calculatePto,
   isCalendarDate,
   optimizePto,
   ptoInputSchema,
@@ -15,6 +16,39 @@ const base: PtoInput = {
   employerHolidays: [],
   blackouts: [],
 };
+
+describe('structured calculation boundary', () => {
+  it('returns assumptions and deterministic ranking explanations with opportunities', () => {
+    const result = calculatePto(base);
+    expect(result.status).toBe('success');
+    if (result.status === 'invalid') throw Error('Expected valid fixture');
+    expect(result.assumptions).toContain(
+      'Only explicitly confirmed employer holidays reduce PTO.',
+    );
+    expect(result.opportunities[0]?.assumptions).toEqual(result.assumptions);
+    expect(result.opportunities[0]?.rankReason).toBe(result.explanation);
+  });
+  it('returns explicit no-results with actionable advice without relaxing constraints', () => {
+    const result = calculatePto({
+      ...base,
+      budgets: [{ year: 2026, allowance: 20, balance: 0 }],
+    });
+    expect(result).toMatchObject({ status: 'no-results', opportunities: [] });
+    if (result.status === 'invalid') throw Error('Expected valid fixture');
+    expect(result.explanation).toContain(
+      'hard constraints have not been relaxed',
+    );
+  });
+  it('returns structured validation errors instead of throwing at the app boundary', () => {
+    const result = calculatePto({ ...base, startDate: '2026-02-30' });
+    expect(result.status).toBe('invalid');
+    if (result.status !== 'invalid') throw Error('Expected invalid fixture');
+    expect(result.issues).toContainEqual({
+      path: ['startDate'],
+      message: 'Enter a valid date in YYYY-MM-DD format.',
+    });
+  });
+});
 
 describe('date-only calendar helpers', () => {
   it('validates actual dates rather than normalized timestamps', () => {
