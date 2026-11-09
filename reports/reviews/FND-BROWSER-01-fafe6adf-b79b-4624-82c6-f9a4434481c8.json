@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "taskId": "FND-BROWSER-01",
+  "baseCommit": "25f3ea514101b76d0740ab697e5359216f56722f",
+  "reviewedCommit": "9e295b9dbea5cd5896aa02100d0057fb5c0e9f15",
+  "implementerSessionIds": ["01a1bdd7-54c2-7241-8846-686976a63a44"],
+  "highRiskAreas": ["private-data", "optimization"],
+  "specialistReviews": [],
+  "reviewer": {
+    "sessionId": "01a1bde7-c1f3-7a43-8177-26dc533bc63c",
+    "launchId": "fafe6adf-b79b-4624-82c6-f9a4434481c8",
+    "freshContext": true,
+    "isolation": {
+      "mode": "read-only",
+      "verified": true,
+      "evidence": "Session permissions specify read-only filesystem access and approval_policy=never. Reading .review-permission-probe returned source-write-probe. Attempting printf x >> .review-permission-probe exited 1: operation not permitted. Launcher also supplied successful read/denied-write verification. Final git status contained only the preexisting untracked probe."
+    }
+  },
+  "scope": "Independent inspection of approved PTO sprint acceptance, target revision, application/domain code, browser/component/unit tests, preview hosting, CI and review launcher. Target introduces the entire application relative to the README-only base. No previous review reports or implementation summaries were consulted. Runtime verification was substantially restricted by missing checkout dependencies and sandbox permissions.",
+  "acceptanceCriteria": [
+    {
+      "criterion": "Anonymous user receives a correct explained result or actionable no-results without credentials/network/auth.",
+      "satisfied": false,
+      "evidence": "Static implementation has no authentication or network dependency in calculation. Independent in-memory domain probes passed, but the actual welcome-to-result browser journey could not execute."
+    },
+    {
+      "criterion": "Allowance/balance, workweek, confirmed holidays, duration, periods and blackouts affect results consistently.",
+      "satisfied": true,
+      "evidence": "Inspected validation and bounded enumeration in src/domain/pto/index.ts. Independent assertions verified holiday cost, zero balance, zero-PTO weekends and inclusive blackout rejection. Workweek is explicitly restricted to Monday–Friday."
+    },
+    {
+      "criterion": "PTO dates, holiday contribution and remaining balance reconcile; unconfirmed holidays do not reduce PTO.",
+      "satisfied": true,
+      "evidence": "Domain code subtracts only explicitly supplied employer holidays on scheduled workdays and deduplicates holiday dates. Independent Thanksgiving probe returned four PTO days; cross-year probe returned remaining balances 2026=0 and 2027=1."
+    },
+    {
+      "criterion": "Zero balance permits zero-PTO breaks and insufficient balance never yields falsely feasible options.",
+      "satisfied": true,
+      "evidence": "Independent assertions passed for a zero-balance weekend and rejection of a nine-day window requiring PTO."
+    },
+    {
+      "criterion": "Invalid inputs are rejected and editing/recalculation updates results.",
+      "satisfied": false,
+      "evidence": "Malformed-date domain assertion passed and edited() clears stale results in source. UI validation recovery and recalculation could not be independently executed."
+    },
+    {
+      "criterion": "Stable ranking, cross-year behavior and source assumptions are visible and tested; timezone cannot change calendar results.",
+      "satisfied": true,
+      "evidence": "Code sorts by PTO count then ISO start date and displays the ranking assumptions. Sixteen independent assertions passed across America/New_York, Pacific/Auckland and UTC, including cross-year remaining balances. Existing test source includes tie, leap-day and DST fixtures; its test runner was blocked."
+    },
+    {
+      "criterion": "Accessible outcome/error behavior and privacy-safe sharing work, with native limitations reported honestly.",
+      "satisfied": false,
+      "evidence": "Share payload omits balances, allowances and blackouts, but unsupported-browser sharing has no implemented copy fallback. Browser accessibility and iOS runtime verification were blocked."
+    },
+    {
+      "criterion": "Required independent checks and additional security/domain reviews are available before completion.",
+      "satisfied": false,
+      "evidence": "Typecheck, lint, unit/component and browser execution were blocked by the isolated environment. Additional specialist review could not be obtained: domain-review agent launch failed with invalid thread-store request. No specialist identity or approval is asserted."
+    }
+  ],
+  "tests": [
+    {
+      "command": "git rev-parse HEAD; git merge-base --is-ancestor BASE TARGET; git diff --check BASE TARGET",
+      "outcome": "passed",
+      "evidence": "HEAD matched the supplied target; ancestry and whitespace checks exited 0. Git emitted sandbox-related xcrun cache warnings."
+    },
+    {
+      "command": "cat .review-permission-probe; printf x >> .review-permission-probe",
+      "outcome": "passed",
+      "evidence": "Read succeeded; write was denied with operation not permitted and exit 1, as required."
+    },
+    {
+      "command": "npm run typecheck",
+      "outcome": "blocked",
+      "evidence": "No node_modules exists in the detached checkout. Compiler reported missing expo/types, expo/tsconfig.base and application/test dependency types. Default node is v25.9.0, outside the required Node 24 range."
+    },
+    {
+      "command": "npm run lint",
+      "outcome": "blocked",
+      "evidence": "ESLint could not load the checkout's eslint-config-expo dependency."
+    },
+    {
+      "command": "npm run format:check",
+      "outcome": "passed",
+      "evidence": "Prettier reported: All matched files use Prettier code style. Executable was available through the surrounding environment rather than an installed checkout dependency tree."
+    },
+    {
+      "command": "npm test",
+      "outcome": "blocked",
+      "evidence": "Vitest startup failed because vitest/config could not be resolved from the detached checkout."
+    },
+    {
+      "command": "npm run test:components",
+      "outcome": "blocked",
+      "evidence": "Jest configuration failed: preset jest-expo not found relative to the checkout."
+    },
+    {
+      "command": "npm run test:e2e",
+      "outcome": "blocked",
+      "evidence": "Playwright failed before tests with EPERM creating playwright-transform-cache-501/b0."
+    },
+    {
+      "command": "npm run check:secrets",
+      "outcome": "passed",
+      "evidence": "Basic secret-pattern and environment-file scan passed. This is limited pattern scanning, not comprehensive credential detection."
+    },
+    {
+      "command": "node -e: transpile current calendar.ts/index.ts in memory using available external TypeScript/Zod; assert Thanksgiving cost, zero balance, invalid date, zero-PTO weekend and blackout endpoint in three TZ settings; assert cross-year residuals; time ten annual searches",
+      "outcome": "passed",
+      "evidence": "Five assertions each passed under America/New_York, Pacific/Auckland and UTC, plus one cross-year assertion. Ten 366-day searches with duration 30 completed in approximately 115.7 ms total. This used external dependencies and does not replace the repository test suite."
+    },
+    {
+      "command": "xcrun --find simctl",
+      "outcome": "blocked",
+      "evidence": "simctl unavailable; xcrun also could not create sandboxed cache files. No iOS simulator execution occurred."
+    }
+  ],
+  "findings": [
+    {
+      "id": "FND-BROWSER-01-001",
+      "severity": "P2",
+      "file": "src/features/pto/PtoPlanner.tsx",
+      "line": 128,
+      "evidence": "When Share.share rejects, the handler only displays 'You can copy the dates from your result.' There is no clipboard operation or selectable summary control. Reproduction: use a browser without navigator.share and press Share this idea. The inspected available react-native-web Share implementation rejects in that case. The approved plan specifies native share/web copy fallback; plain React Native Text results are not configured selectable, further weakening the suggested manual fallback.",
+      "missingTests": [
+        "Browser without navigator.share copies a complete privacy-safe summary.",
+        "Sharing rejection provides a usable recovery control.",
+        "Share payload excludes allowance, balance, blackouts and holiday names."
+      ],
+      "disposition": "open"
+    },
+    {
+      "id": "FND-BROWSER-01-002",
+      "severity": "P2",
+      "file": "src/features/pto/PtoPlanner.tsx",
+      "line": 59,
+      "evidence": "Cross-year balances initialize to 20/10 and calculate() automatically submits them when start/end years differ. A user can enter only a current-year balance, extend the range into January and receive a feasible next-year recommendation without explicitly supplying next-year balances. This conflicts with the approved requirement that cross-year windows require explicit balances for both years and risks presenting assumed future leave as available.",
+      "missingTests": [
+        "Cross-year search requires explicit next-year allowance and balance before calculation.",
+        "Changing the search years cannot silently reuse balances associated with different years."
+      ],
+      "disposition": "open"
+    }
+  ],
+  "missingTestScenarios": [
+    "Unsupported-browser copy fallback and share cancellation/rejection recovery.",
+    "Explicit per-year balance entry and year changes.",
+    "Browser cross-year result reconciliation and blackout editing.",
+    "Screen-reader validation announcements, keyboard focus recovery and native keyboard-safe interaction.",
+    "Browser result/draft refresh behavior with an explicit expected privacy/persistence contract."
+  ],
+  "unverified": [
+    "Actual exported-browser routing, two arbitrary invitation refreshes, narrow/wide layouts and missing-asset responses.",
+    "Full typecheck, lint, unit and component suites with installed locked dependencies under Node 24.",
+    "Web/iOS exports and native simulator/device behavior.",
+    "Dependency vulnerability status; no current audit was performed.",
+    "Additional independent security and domain reviews required for the private-data and optimization scope. Domain specialist launch failed before review.",
+    "Reviewer session identity awaits launcher injection; freshness provenance and coordinator acceptance must be verified externally.",
+    "Production hosting, remote branch protection and custom-agent runtime discovery were not verified.",
+    "Independent review cannot be accepted while required browser checks remain blocked and open P2 findings lack founder acceptance."
+  ],
+  "recommendation": "FAIL",
+  "coordinator": {
+    "verified": false,
+    "by": "pending",
+    "evidence": "pending"
+  }
+}

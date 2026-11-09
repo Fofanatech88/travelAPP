@@ -1,4 +1,4 @@
-import { AccessibilityInfo } from 'react-native';
+import { AccessibilityInfo, Share } from 'react-native';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { PtoPlanner } from '../../src/features/pto/PtoPlanner';
 
@@ -74,4 +74,42 @@ test('iOS announces the recommendation outcome', async () => {
     expect.stringContaining('Found 1 vacation opportunities'),
   );
   announce.mockRestore();
+});
+
+test('native sharing excludes private inputs and reports dismissal', async () => {
+  const share = jest
+    .spyOn(Share, 'share')
+    .mockResolvedValue({ action: Share.dismissedAction });
+  try {
+    await render(<PtoPlanner />);
+    await fireEvent.changeText(
+      screen.getByLabelText('Search from (YYYY-MM-DD)'),
+      '2026-11-21',
+    );
+    await fireEvent.changeText(
+      screen.getByLabelText('Search through (YYYY-MM-DD)'),
+      '2026-11-29',
+    );
+    await fireEvent.changeText(
+      screen.getByLabelText('Annual PTO allowance'),
+      '143',
+    );
+    await fireEvent.changeText(
+      screen.getByLabelText('Available PTO balance'),
+      '77',
+    );
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Find my vacation windows' }),
+    );
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Share option 1' }),
+    );
+    expect(share).toHaveBeenCalledWith({
+      message:
+        'Vacation idea: 2026-11-21 to 2026-11-29. 9 days away using 5 PTO days, assuming Monday–Friday work and confirmed employer holidays. Leave still requires employer approval.',
+    });
+    expect(screen.getByText('Sharing cancelled.')).toBeOnTheScreen();
+  } finally {
+    share.mockRestore();
+  }
 });

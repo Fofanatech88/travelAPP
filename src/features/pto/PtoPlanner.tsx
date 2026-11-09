@@ -3,7 +3,6 @@ import {
   AccessibilityInfo,
   Platform,
   Pressable,
-  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -16,8 +15,10 @@ import {
   type VacationOpportunity,
 } from '../../domain/pto';
 import { tokens } from '../../design/tokens';
+import { shareSummary } from '../../services/sharing/shareSummary';
 
 type Holiday = { date: string; name: string };
+type BudgetFields = { allowance: string; balance: string };
 function Field({
   label,
   value,
@@ -54,16 +55,16 @@ export function PtoPlanner() {
   });
   const [end, setEnd] = useState(() => addDays(start, 89));
   const [duration, setDuration] = useState('9');
-  const [allowance, setAllowance] = useState('20');
-  const [balance, setBalance] = useState('10');
-  const [nextAllowance, setNextAllowance] = useState('20');
-  const [nextBalance, setNextBalance] = useState('10');
+  const [budgets, setBudgets] = useState<Record<string, BudgetFields>>(() => ({
+    [start.slice(0, 4)]: { allowance: '20', balance: '10' },
+  }));
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [blackouts, setBlackouts] = useState<
     { startDate: string; endDate: string }[]
   >([]);
   const [error, setError] = useState('');
   const [shareStatus, setShareStatus] = useState('');
+  const [manualSummary, setManualSummary] = useState('');
   const [options, setOptions] = useState<VacationOpportunity[] | null>(null);
   const resultRef = useRef<ComponentRef<typeof View>>(null);
   useEffect(() => {
@@ -75,11 +76,25 @@ export function PtoPlanner() {
     else AccessibilityInfo.announceForAccessibility(summary);
   }, [options]);
   const crossYear = start.slice(0, 4) !== end.slice(0, 4);
+  const startYear = start.slice(0, 4);
+  const endYear = end.slice(0, 4);
+  const emptyBudget: BudgetFields = { allowance: '', balance: '' };
+  const currentBudget = budgets[startYear] ?? emptyBudget;
+  const nextBudget = budgets[endYear] ?? emptyBudget;
   function edited(change: () => void) {
     change();
     setOptions(null);
     setError('');
     setShareStatus('');
+    setManualSummary('');
+  }
+  function editBudget(year: string, field: keyof BudgetFields, value: string) {
+    edited(() =>
+      setBudgets((previous) => ({
+        ...previous,
+        [year]: { ...(previous[year] ?? emptyBudget), [field]: value },
+      })),
+    );
   }
   function calculate() {
     const integer = (v: string) => (/^\d+$/.test(v) ? Number(v) : Number.NaN);
@@ -90,15 +105,15 @@ export function PtoPlanner() {
       budgets: [
         {
           year: Number(start.slice(0, 4)),
-          allowance: integer(allowance),
-          balance: integer(balance),
+          allowance: integer(currentBudget.allowance),
+          balance: integer(currentBudget.balance),
         },
         ...(crossYear
           ? [
               {
                 year: Number(end.slice(0, 4)),
-                allowance: integer(nextAllowance),
-                balance: integer(nextBalance),
+                allowance: integer(nextBudget.allowance),
+                balance: integer(nextBudget.balance),
               },
             ]
           : []),
@@ -120,16 +135,18 @@ export function PtoPlanner() {
     setOptions(optimizePto(parsed.data));
   }
   async function share(option: VacationOpportunity) {
-    try {
-      await Share.share({
-        message: `Vacation idea: ${option.startDate} to ${option.endDate}. ${option.daysAway} days away using ${option.ptoDates.length} PTO days, assuming Monday–Friday work and confirmed employer holidays. Leave still requires employer approval.`,
-      });
-      setShareStatus('Sharing opened.');
-    } catch {
-      setShareStatus(
-        'Sharing is unavailable. You can copy the dates from your result.',
-      );
-    }
+    const summary = `Vacation idea: ${option.startDate} to ${option.endDate}. ${option.daysAway} days away using ${option.ptoDates.length} PTO days, assuming Monday–Friday work and confirmed employer holidays. Leave still requires employer approval.`;
+    setManualSummary('');
+    const outcome = await shareSummary(summary);
+    setShareStatus(
+      {
+        shared: 'Vacation summary shared.',
+        copied: 'Vacation summary copied.',
+        cancelled: 'Sharing cancelled.',
+        manual: 'Select and copy this vacation summary:',
+      }[outcome],
+    );
+    if (outcome === 'manual') setManualSummary(summary);
   }
   return (
     <View style={styles.container}>
@@ -186,14 +203,15 @@ export function PtoPlanner() {
         />
         <Field
           label="Annual PTO allowance"
-          value={allowance}
-          onChange={(v) => edited(() => setAllowance(v))}
+          value={currentBudget.allowance}
+          onChange={(v) => editBudget(startYear, 'allowance', v)}
+          hint={`For ${startYear}. Enter the allowance for this calendar year.`}
           numeric
         />
         <Field
           label="Available PTO balance"
-          value={balance}
-          onChange={(v) => edited(() => setBalance(v))}
+          value={currentBudget.balance}
+          onChange={(v) => editBudget(startYear, 'balance', v)}
           numeric
           hint="Whole days you can still use. We do not assume accrual or carryover."
         />
@@ -201,14 +219,16 @@ export function PtoPlanner() {
           <>
             <Field
               label="Next year annual allowance"
-              value={nextAllowance}
-              onChange={(v) => edited(() => setNextAllowance(v))}
+              value={nextBudget.allowance}
+              onChange={(v) => editBudget(endYear, 'allowance', v)}
+              hint={`For ${endYear}. Required; we do not assume future leave.`}
               numeric
             />
             <Field
               label="Next year available balance"
-              value={nextBalance}
-              onChange={(v) => edited(() => setNextBalance(v))}
+              value={nextBudget.balance}
+              onChange={(v) => editBudget(endYear, 'balance', v)}
+              hint={`Enter the days actually available in ${endYear}.`}
               numeric
             />
           </>
@@ -408,6 +428,11 @@ export function PtoPlanner() {
       {shareStatus !== '' && (
         <Text accessibilityLiveRegion="polite" style={styles.hint}>
           {shareStatus}
+        </Text>
+      )}
+      {manualSummary !== '' && (
+        <Text selectable style={styles.body}>
+          {manualSummary}
         </Text>
       )}
     </View>

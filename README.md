@@ -27,6 +27,8 @@ Git is initialized and origin points to `Fofanatech88/travelAPP`. The November 8
 
 Welcome → Find my time off → enter PTO, search period and duration → add employer holidays/blackouts → calculate. Supports Monday–Friday workweeks, dates in 2026–2028, and explicit per-year balances. No official holiday calendar is automatically applied. No login, backend, or network call is required. Results explain required PTO dates, holidays, alternatives and remaining balance. Shares exclude allowance and remaining balance.
 
+Cross-year searches require entering the additional year's allowance and balance; values stay associated with their calendar year. Web sharing falls back to copying a safe summary, with selectable text if clipboard access is denied.
+
 Reproduce the component- and browser-tested example: search 2026-11-21 through 2026-11-29, duration 9, allowance 20, balance 10, add employer holiday 2026-11-26. Result: 9 days away, 4 PTO days, 6 remaining. Removing the holiday requires 5 PTO days.
 
 ## Native development build path

@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "taskId": "PTO-DOMAIN-01",
+  "baseCommit": "25f3ea514101b76d0740ab697e5359216f56722f",
+  "reviewedCommit": "9e295b9dbea5cd5896aa02100d0057fb5c0e9f15",
+  "implementerSessionIds": ["01a1bdd7-54c2-7241-8846-686976a63a44"],
+  "highRiskAreas": ["optimization"],
+  "specialistReviews": [],
+  "reviewer": {
+    "sessionId": "01a1bde9-4715-7f90-a2b5-ca13a71995b6",
+    "launchId": "01ef28a9-4b33-4f01-b77b-7c3530bd8fab",
+    "freshContext": true,
+    "isolation": {
+      "mode": "read-only",
+      "verified": true,
+      "evidence": "Session permissions specify enforced read-only filesystem access with approvals disabled. Launcher explicitly supplied successful source-read/denied-source-write probe verification. Independently read .review-permission-probe, containing source-write-probe. Shell also denied creation of a temporary here-document file. Source-write denial itself is launcher-attested; this reviewer did not repeat a source mutation."
+    }
+  },
+  "scope": "Compared approved optimization-design.md with newly introduced PTO calendar/domain implementation, unit tests, planner integration and component/browser test sources. Inspected AGENTS.md, independent-review instructions, relevant calendar ADR and product requirements. HEAD matches target. Base-to-target diff contains 107 changed files; this task-focused review does not approve unrelated foundation, review tooling or infrastructure changes. No prior reports or implementation summaries were read.",
+  "acceptanceCriteria": [
+    {
+      "criterion": "Pure deterministic TypeScript engine with centralized validated UTC date-only arithmetic and no network or LLM dependency.",
+      "satisfied": true,
+      "evidence": "Static inspection of src/domain/pto/calendar.ts and index.ts: Gregorian component round-trip validation, integer UTC day arithmetic and no external service calls. Runtime verification blocked."
+    },
+    {
+      "criterion": "Workweeks are represented as sets of weekdays.",
+      "satisfied": false,
+      "evidence": "src/domain/pto/index.ts:41-49 provides no workweek field; line 136 delegates to a hardcoded Monday-Friday predicate. tests/unit/pto.test.ts explicitly expects workdays overrides to be rejected."
+    },
+    {
+      "criterion": "Enumerate bounded fixed-duration windows, respect inclusive blackouts and enforce balances separately by year.",
+      "satisfied": true,
+      "evidence": "Static inspection of index.ts:50-81 and 118-156 shows bounded search, inclusive overlap rejection and per-year balance checks. Unit test sources cover blackout endpoints, cross-year costs and insufficient balances; execution blocked."
+    },
+    {
+      "criterion": "Only confirmed employer holidays reduce scheduled-workday PTO cost; return dates, duration, costs, contributing holidays and remaining balances.",
+      "satisfied": true,
+      "evidence": "index.ts:100-155 accepts employerHolidays, deduplicates dates and subtracts holidays only after the workday check. VacationOpportunity includes the requested numerical breakdown. Planner labels holidays as employer-confirmed."
+    },
+    {
+      "criterion": "Immutable inputs and deterministic ranking by total required PTO followed by start date.",
+      "satisfied": true,
+      "evidence": "Static inspection: schema parsing, copied holiday array, newly allocated outputs and sort at index.ts:158-164. Input immutability and ranking assertions exist in unit test sources; execution blocked."
+    },
+    {
+      "criterion": "Results include assumptions and explanations; empty results explain constraints and suggest edits.",
+      "satisfied": false,
+      "evidence": "Domain API returns VacationOpportunity[] without assumptions or empty-result explanation. All infeasible searches return []. Planner supplies generic presentation text but cannot distinguish the domain rejection causes."
+    }
+  ],
+  "tests": [
+    {
+      "command": "git diff --stat 25f3ea514101b76d0740ab697e5359216f56722f 9e295b9dbea5cd5896aa02100d0057fb5c0e9f15; git rev-parse HEAD",
+      "outcome": "passed",
+      "evidence": "Diff enumerated 107 changed files; HEAD returned the exact target hash. Git emitted denied temporary cache-write warnings but returned the requested information."
+    },
+    {
+      "command": "npm test -- --no-file-parallelism",
+      "outcome": "blocked",
+      "evidence": "Vitest could not resolve vitest/config from the project configuration. No successful test execution was observed."
+    },
+    {
+      "command": "npm run typecheck",
+      "outcome": "blocked",
+      "evidence": "Compiler reported missing expo/tsconfig.base, vitest and other dependency/type declarations. Checkout has no local node_modules. These diagnostics do not establish a source regression."
+    },
+    {
+      "command": "npm run lint",
+      "outcome": "blocked",
+      "evidence": "ESLint configuration could not resolve eslint/config."
+    },
+    {
+      "command": "npm run format:check",
+      "outcome": "passed",
+      "evidence": "Prettier reported: All matched files use Prettier code style."
+    },
+    {
+      "command": "npm run check:secrets",
+      "outcome": "passed",
+      "evidence": "Basic secret patterns and environment-file check passed. This is a limited pattern scan."
+    },
+    {
+      "command": "npm run test:components",
+      "outcome": "blocked",
+      "evidence": "Jest reported that preset jest-expo could not be found relative to the checkout."
+    },
+    {
+      "command": "node --input-type=module with inline calendar assertions supplied through a shell here-document",
+      "outcome": "blocked",
+      "evidence": "Shell rejected temporary-file creation for the here-document before Node executed. No calendar assertions ran."
+    }
+  ],
+  "findings": [
+    {
+      "id": "PTO-DOMAIN-01-001",
+      "severity": "P2",
+      "file": "src/domain/pto/index.ts",
+      "line": 136,
+      "evidence": "Approved calendar model requires weekday sets, but every calculation uses isStandardWorkday, which hardcodes Monday-Friday in calendar.ts:42-44. The strict input object has no schedule field. Reproduction from source: a caller adding workdays: [0,1,2,3,4] is rejected, as explicitly asserted in the unit tests; omitting it calculates Friday as work and Sunday as free regardless of that employee's recurring schedule. The UI discloses the restriction, but the supplied approved requirement does not authorize replacing weekday sets with this restriction.",
+      "missingTests": [
+        "Sunday-Thursday and part-time recurring weekday sets produce the correct PTO dates.",
+        "Validate duplicate, empty and out-of-range weekday selections according to an approved schedule contract."
+      ],
+      "disposition": "open"
+    },
+    {
+      "id": "PTO-DOMAIN-01-002",
+      "severity": "P2",
+      "file": "src/domain/pto/index.ts",
+      "line": 100,
+      "evidence": "The engine returns only an array. Reproduction from source and existing test fixtures: insufficient balance, blackout intersection and duration longer than the search period each produce the identical empty array. Neither VacationOpportunity nor the return type carries assumptions or rejection explanations. The approved design requires results with assumptions and empty results explaining constraints and suggesting edits. PtoPlanner.tsx supplies generic advice, leaving domain consumers unable to explain the actual failure.",
+      "missingTests": [
+        "Empty results identify insufficient yearly balance, blackout exclusion and insufficient search duration.",
+        "Successful domain results expose the workweek and employer-holiday assumptions.",
+        "Constraint explanations never imply automatic relaxation of hard rules."
+      ],
+      "disposition": "open"
+    }
+  ],
+  "missingTestScenarios": [
+    "Configurable recurring weekday schedules required by the approved design.",
+    "Structured domain assumptions and constraint-specific empty-result explanations.",
+    "Independent exhaustive-oracle comparison across generated bounded inputs.",
+    "Repeated confirmed holiday dates with conflicting names and reversed input order.",
+    "Maximum supported input sizes and execution-time bounds.",
+    "Browser and iOS integration covering cross-year balances, blackouts and share payload privacy."
+  ],
+  "unverified": [
+    "Review Blocked: required additional independent domain specialist review is absent; no specialist identity or evidence was supplied.",
+    "Unit, component, typecheck and lint verification could not complete because project dependencies were unavailable. Dependencies were not installed in the read-only checkout.",
+    "Runtime is Node v25.9.0; package.json requires Node >=24.3.0 <25.",
+    "Browser execution, production web export, iOS export and physical/simulator iOS behavior were not verified.",
+    "Multiple-time-zone calendar assertions were attempted but did not execute.",
+    "Dependency vulnerability assessment was not performed.",
+    "No security approval is implied for unrelated authentication, guest-access or review-tooling changes in the broad base-to-target diff.",
+    "Reviewer session identity awaits launcher population; coordinator provenance and acceptance remain pending."
+  ],
+  "recommendation": "FAIL",
+  "coordinator": {
+    "verified": false,
+    "by": "pending",
+    "evidence": "pending"
+  }
+}

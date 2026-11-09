@@ -125,3 +125,130 @@ test('returning from welcome preserves the private draft in this session', async
     page.getByLabel('Available PTO balance', { exact: true }),
   ).toHaveValue('7');
 });
+
+test('cross-year searches require explicit budgets and keep them tied to years', async ({
+  page,
+}) => {
+  await page.goto('/pto');
+  await page
+    .getByLabel('Search from (YYYY-MM-DD)', { exact: true })
+    .fill('2026-12-31');
+  await page
+    .getByLabel('Search through (YYYY-MM-DD)', { exact: true })
+    .fill('2027-01-03');
+  await page.getByLabel('Vacation length in days', { exact: true }).fill('4');
+  await expect(
+    page.getByLabel('Next year annual allowance', { exact: true }),
+  ).toHaveValue('');
+  await expect(
+    page.getByLabel('Next year available balance', { exact: true }),
+  ).toHaveValue('');
+  await page.getByRole('button', { name: 'Find my vacation windows' }).click();
+  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Your vacation opportunities' }),
+  ).toHaveCount(0);
+  await page.getByLabel('Available PTO balance', { exact: true }).fill('1');
+  await page
+    .getByLabel('Next year annual allowance', { exact: true })
+    .fill('15');
+  await page
+    .getByLabel('Next year available balance', { exact: true })
+    .fill('1');
+  await page.getByRole('button', { name: 'Find my vacation windows' }).click();
+  await expect(
+    page.getByText('4 days away · 2 PTO days', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText('2026: 0 PTO days remaining after this option.', {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText('2027: 0 PTO days remaining after this option.', {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page
+    .getByLabel('Search from (YYYY-MM-DD)', { exact: true })
+    .fill('2027-01-01');
+  await expect(
+    page.getByLabel('Annual PTO allowance', { exact: true }),
+  ).toHaveValue('15');
+  await page
+    .getByLabel('Search from (YYYY-MM-DD)', { exact: true })
+    .fill('2028-01-01');
+  await page
+    .getByLabel('Search through (YYYY-MM-DD)', { exact: true })
+    .fill('2028-01-09');
+  await expect(
+    page.getByLabel('Annual PTO allowance', { exact: true }),
+  ).toHaveValue('');
+  await expect(
+    page.getByLabel('Available PTO balance', { exact: true }),
+  ).toHaveValue('');
+});
+
+for (const clipboardDenied of [false, true]) {
+  test(`browser share fallback with clipboard ${clipboardDenied ? 'denied' : 'available'}`, async ({
+    page,
+  }) => {
+    await page.addInitScript((denied) => {
+      Object.defineProperty(navigator, 'share', {
+        configurable: true,
+        value: undefined,
+      });
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          writeText: async (summary: string) => {
+            if (denied) throw new Error('Clipboard denied');
+            (window as unknown as { copiedSummary: string }).copiedSummary =
+              summary;
+          },
+        },
+      });
+    }, clipboardDenied);
+    await page.goto('/pto');
+    await page
+      .getByLabel('Search from (YYYY-MM-DD)', { exact: true })
+      .fill('2026-11-21');
+    await page
+      .getByLabel('Search through (YYYY-MM-DD)', { exact: true })
+      .fill('2026-11-29');
+    await page.getByLabel('Annual PTO allowance', { exact: true }).fill('143');
+    await page.getByLabel('Available PTO balance', { exact: true }).fill('77');
+    await page
+      .getByRole('button', { name: 'Find my vacation windows' })
+      .click();
+    await page
+      .getByRole('button', { name: 'Share option 1', exact: true })
+      .click();
+    const expected =
+      'Vacation idea: 2026-11-21 to 2026-11-29. 9 days away using 5 PTO days, assuming Monday–Friday work and confirmed employer holidays. Leave still requires employer approval.';
+    if (clipboardDenied) {
+      await expect(
+        page.getByText('Select and copy this vacation summary:', {
+          exact: true,
+        }),
+      ).toBeVisible();
+      const summary = page.getByText(expected, { exact: true });
+      await expect(summary).toBeVisible();
+      await expect(summary).toHaveCSS('user-select', 'text');
+    } else {
+      await expect(
+        page.getByText('Vacation summary copied.', { exact: true }),
+      ).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { copiedSummary: string }).copiedSummary,
+        ),
+      ).toBe(expected);
+    }
+    await page.getByLabel('Available PTO balance', { exact: true }).fill('0');
+    await expect(page.getByText(expected, { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByText('Vacation summary copied.', { exact: true }),
+    ).toHaveCount(0);
+  });
+}
