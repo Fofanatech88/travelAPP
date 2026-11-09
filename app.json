@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Project Together",
+    "slug": "project-together",
+    "scheme": "project-together-dev",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "platforms": ["ios", "web"],
+    "plugins": ["expo-router"],
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    }
+  }
+}

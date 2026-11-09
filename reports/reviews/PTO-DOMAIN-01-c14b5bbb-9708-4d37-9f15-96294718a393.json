@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "taskId": "PTO-DOMAIN-01",
+  "baseCommit": "25f3ea514101b76d0740ab697e5359216f56722f",
+  "reviewedCommit": "8bb93d19f0c92fb85189ec06be9b2e6adaba6d69",
+  "implementerSessionIds": ["01a1bdd7-54c2-7241-8846-686976a63a44"],
+  "highRiskAreas": ["optimization", "private-data"],
+  "specialistReviews": [],
+  "reviewer": {
+    "sessionId": "01a1c27a-b0cd-7be2-930b-2d9ced76e65b",
+    "launchId": "c14b5bbb-9708-4d37-9f15-96294718a393",
+    "freshContext": true,
+    "isolation": {
+      "mode": "read-only",
+      "verified": true,
+      "evidence": "Session permissions specify read-only filesystem access and approvals disabled. Independently read .review-permission-probe successfully; fs.openSync('.review-permission-probe', 'r+') was denied with EPERM. No implementation files were modified. Launcher additionally supplied confirmation of its denied source-write probe."
+    }
+  },
+  "scope": "Compared the specified base/target diff with plans/first-pto-sprint.md, product requirements, repository instructions and relevant architecture decisions. Inspected PTO calendar helpers, validation, enumeration/ranking, planner presentation, sharing boundary and associated unit/component/browser tests. HEAD matches the target; the base ancestry check succeeded. No prior reports or implementation explanations were used. No concrete implementation defect was established, but required execution evidence remains incomplete, so this report does not authorize acceptance.",
+  "acceptanceCriteria": [
+    {
+      "criterion": "Anonymous user gets a correct explained result or actionable no-results without credentials/network/auth.",
+      "satisfied": true,
+      "evidence": "src/domain/pto/index.ts calculatePto returns structured invalid, success and no-results outcomes. Executed existing domain fixtures for explanations, actionable no-results and exact PTO costs. Domain imports contain no platform, authentication or network dependencies. End-to-end user execution remains unverified separately."
+    },
+    {
+      "criterion": "Allowance/balance, recurring workweek, employer-confirmed holidays, duration, preferred periods and blackouts affect results consistently.",
+      "satisfied": true,
+      "evidence": "Inspected strict input schemas and bounded enumeration in src/domain/pto/index.ts. Executed fixtures covering allowance/balance consistency, fixed Monday\u2013Friday workdays, rejection of workweek overrides, confirmed holidays, duration, bounded search periods and inclusive overlapping blackouts."
+    },
+    {
+      "criterion": "Required PTO dates, holiday contribution and remaining balance reconcile exactly; unconfirmed holidays do not reduce PTO.",
+      "satisfied": true,
+      "evidence": "Executed fixtures checking exact ptoDates, ptoByYear, remainingByYear and ptoSaved. Enumeration counts only explicitly supplied employer holidays on workdays, deduplicates dates and does not transfer weekend holidays to an observed weekday."
+    },
+    {
+      "criterion": "Zero balance can yield a zero-PTO break; insufficient balance never yields a falsely feasible option.",
+      "satisfied": true,
+      "evidence": "Executed zero-balance weekend, insufficient weekday balance, exact balance limit and separate cross-year balance fixtures from tests/unit/pto.test.ts."
+    },
+    {
+      "criterion": "Inputs reject malformed dates/ranges, impossible dates, negative/noninteger PTO and invalid weekdays. Editing/recalculation updates results.",
+      "satisfied": false,
+      "evidence": "Domain validation fixtures passed, including impossible dates, reversed ranges, fractional/negative balances and unsupported workweek overrides. Planner source clears stale results on edits, but component and browser execution was blocked by sandbox cache-write denials; editing/recalculation acceptance is therefore not fully verified."
+    },
+    {
+      "criterion": "Stable tie-breaking, cross-year behavior and source assumptions are visible and tested. Device timezone cannot change a calendar result.",
+      "satisfied": true,
+      "evidence": "Executed all 39 existing PTO fixture cases under America/New_York, Pacific/Auckland and UTC using an in-memory TypeScript/node:assert harness. Fixtures cover deterministic ranking, cross-year limits, leap day and DST boundaries. Calendar helpers consistently use UTC components and integer day arithmetic. UI source displays ranking and workweek/employer-confirmation assumptions."
+    },
+    {
+      "criterion": "Accessible loading/empty/error/success behavior and sharing privacy reviewed; native execution limitations reported honestly.",
+      "satisfied": false,
+      "evidence": "Static inspection found accessible field labels, error alerts, result focus/announcements and a summary that excludes balances, allowances, blackout ranges and holiday names. Component/browser tests could not execute, and no simulator/device execution occurred. Actual focus, screen-reader, keyboard and native sharing behavior remains unverified."
+    },
+    {
+      "criterion": "Required checks, browser/iOS evidence and additional independent specialist reviews are available before completion.",
+      "satisfied": false,
+      "evidence": "Typecheck, lint, formatting and basic secret checks passed. Standard unit/component/browser runners were blocked by filesystem enforcement. No native execution or additional independent domain/security specialist reports were supplied. Coordinator verification remains pending."
+    }
+  ],
+  "tests": [
+    {
+      "command": "git rev-parse HEAD; git merge-base --is-ancestor 25f3ea514101b76d0740ab697e5359216f56722f 8bb93d19f0c92fb85189ec06be9b2e6adaba6d69",
+      "outcome": "passed",
+      "evidence": "HEAD was 8bb93d19f0c92fb85189ec06be9b2e6adaba6d69; ancestry check exited 0. Git emitted denied temporary-cache warnings but completed these operations."
+    },
+    {
+      "command": "Node fs.readFileSync('.review-permission-probe'); fs.openSync('.review-permission-probe', 'r+')",
+      "outcome": "passed",
+      "evidence": "Read returned source-write-probe. Write-capable open was denied with EPERM; no content was changed."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run typecheck",
+      "outcome": "passed",
+      "evidence": "tsc --noEmit exited 0."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run lint",
+      "outcome": "passed",
+      "evidence": "eslint . exited 0."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run format:check",
+      "outcome": "passed",
+      "evidence": "Prettier exited 0 and reported all matched files use Prettier code style."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm test -- --no-file-parallelism",
+      "outcome": "blocked",
+      "evidence": "Exited 1 before test execution. All four suites failed collection because mkdir of a temporary ssr cache directory was denied with EPERM. Zero tests ran; this is not evidence of failing application assertions."
+    },
+    {
+      "command": "Node v24.22.2 -e: in-memory typescript.transpileModule/CommonJS loader executing tests/unit/pto.test.ts with node:assert matchers under TZ=America/New_York, Pacific/Auckland and UTC",
+      "outcome": "passed",
+      "evidence": "39 existing PTO fixture cases passed in each timezone, 117 executions total. Harness implemented the fixture-used describe, it, it.each and assertion methods without filesystem writes. This independently exercised domain assertions but does not establish that the Vitest runner passes."
+    },
+    {
+      "command": "In-memory domain harness: ten optimizePto calls over the inclusive 2028 annual horizon, duration 30, 1100 duplicate holiday entries and 366 nonintersecting blackout entries",
+      "outcome": "passed",
+      "evidence": "Ten calculations completed in 129.3 ms total on this review machine. This is a limited synthetic timing observation, not an iOS performance measurement."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run test:components -- --cache=false",
+      "outcome": "blocked",
+      "evidence": "Exited 1 before component tests executed. Jest attempted to persist a haste-map cache and received EPERM despite --cache=false."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run test:e2e",
+      "outcome": "blocked",
+      "evidence": "Exited 1 while loading configuration because creation of the playwright-transform-cache directory was denied with EPERM. No browser tests executed."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run check:secrets",
+      "outcome": "passed",
+      "evidence": "Basic secret-pattern and environment-file check exited 0. Static inspection found no logging, analytics or persistent profile storage in src."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm audit --offline --omit=dev",
+      "outcome": "passed",
+      "evidence": "Exited 0 and reported zero vulnerabilities. Offline output does not establish current advisory coverage; development dependencies were excluded."
+    },
+    {
+      "command": "git diff --check 25f3ea514101b76d0740ab697e5359216f56722f 8bb93d19f0c92fb85189ec06be9b2e6adaba6d69",
+      "outcome": "passed",
+      "evidence": "Exited 0 with no whitespace errors. Final git status retained only the pre-existing launcher probe and node_modules link as untracked entries."
+    }
+  ],
+  "findings": [],
+  "missingTestScenarios": [
+    "No randomized independent-oracle coverage was found for combinations of annual horizons, holidays, blackouts, durations and yearly balances.",
+    "No automated annual-input runtime regression test was found; this review performed only an ad hoc synthetic timing check."
+  ],
+  "unverified": [
+    "Standard Vitest execution and the non-PTO unit suites were blocked by read-only cache restrictions.",
+    "Component assertions, validation recovery, recalculation and native accessibility announcements were not executed.",
+    "Browser welcome-to-result flow, navigation draft preservation, responsive layout, focus behavior, refresh behavior and sharing fallbacks were not executed.",
+    "Actual iOS simulator/device layout, keyboard avoidance, screen-reader behavior, native sharing and performance were not verified. Shared React Native source and mocked component tests cannot establish native acceptance.",
+    "Web and iOS exports were not run in this read-only session.",
+    "Current dependency advisory coverage was not established by the offline production-only audit.",
+    "Additional independent domain and security specialist review evidence was not supplied; no specialist identity or approval is inferred.",
+    "Reviewer session identity must be attached by the launcher. Coordinator provenance verification, acceptance and report preservation remain pending."
+  ],
+  "recommendation": "FAIL",
+  "coordinator": {
+    "verified": false,
+    "by": "01a1bdd7-54c2-7241-8846-686976a63a44",
+    "evidence": "Provenance checked: fresh thread.started=01a1c27a-b0cd-7be2-930b-2d9ced76e65b; launcher exited 0; immutable target 8bb93d19f0c92fb85189ec06be9b2e6adaba6d69; read-only source probe passed and sentinel intact; session SHA256=51fe4421f40fb869f40b059c42795f3cf23ebfc4f93ffaffaa0ac8cac6ae5929. No final code findings. Completion withheld: required isolated unit/component/browser runners cannot write caches, and actual iOS execution remains blocked by missing Xcode. Coordinator checks passed (63 unit, five component, 12 browser, 39 PTO fixtures in three TZs); hosted verify passed on the reviewed source: https://github.com/Fofanatech88/travelAPP/actions/runs/42714357196/job/129491893153 . Reviewer FAIL recommendation is preserved; this is not Done/merge approval."
+  }
+}

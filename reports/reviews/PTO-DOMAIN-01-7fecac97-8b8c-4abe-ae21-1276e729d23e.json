@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "taskId": "PTO-DOMAIN-01",
+  "baseCommit": "25f3ea514101b76d0740ab697e5359216f56722f",
+  "reviewedCommit": "4280c7b9b499b4a8cac297128027b4fb8bf81813",
+  "implementerSessionIds": ["01a1bdd7-54c2-7241-8846-686976a63a44"],
+  "highRiskAreas": ["optimization", "private-data"],
+  "specialistReviews": [],
+  "reviewer": {
+    "sessionId": "01a1c26f-1692-7e82-a3e0-45edff1c5737",
+    "launchId": "7fecac97-8b8c-4abe-ae21-1276e729d23e",
+    "freshContext": true,
+    "isolation": {
+      "mode": "read-only",
+      "verified": true,
+      "evidence": "Session declares read-only filesystem enforcement and approvals disabled. Independently read src/domain/pto/calendar.ts, then attempted to write identical bytes back using Node fs.writeFileSync. Write was denied with EPERM opening that source file. Launcher also supplied denied-probe evidence. No implementation files were modified."
+    }
+  },
+  "scope": "Independent PTO domain review against plans/first-pto-sprint.md, relevant product requirements and calendar ADR. Inspected base-to-target diff statistics, complete domain diff, domain tests, planner integration, sharing boundary, component/browser tests and configuration. HEAD matched target. Did not read prior reports or implementation explanations. The broad foundational diff was not comprehensively audited outside PTO dependencies.",
+  "acceptanceCriteria": [
+    {
+      "criterion": "Anonymous calculation provides explained feasible opportunities or actionable no-results without authentication or network.",
+      "satisfied": true,
+      "evidence": "Domain module imports only Zod and calendar helpers. Planner calls it directly and renders explicit no-results guidance. Independent fixed assertions and 500 seeded comparisons against a separate enumeration oracle passed."
+    },
+    {
+      "criterion": "Allowance, balance, fixed Monday\u2013Friday workweek, confirmed holidays, duration, selected period and blackouts affect feasibility consistently.",
+      "satisfied": true,
+      "evidence": "Schema separates allowance and balance, rejects unsupported fields, bounds duration/horizon and requires yearly budgets. Enumeration honors inclusive blackouts and weekday holiday exemptions. Independent oracle comparisons covered variable balances, durations, holidays, blackouts and Dec\u2013Jan searches."
+    },
+    {
+      "criterion": "PTO dates, contributing holidays and yearly remaining balances reconcile; unconfirmed holidays grant no leave.",
+      "satisfied": true,
+      "evidence": "Inspected index.ts:132\u2013154 and existing reconciliation/cross-year fixtures. Holiday-free Friday\u2013Sunday independently required exactly Friday PTO. Only explicitly supplied holiday dates can reduce costs."
+    },
+    {
+      "criterion": "Zero balance supports zero-PTO windows and insufficient balance never produces a feasible paid-leave window.",
+      "satisfied": true,
+      "evidence": "Independent assertions passed for zero-balance Saturday\u2013Sunday and rejected zero-balance Friday\u2013Sunday. Seeded oracle comparisons also checked balance feasibility."
+    },
+    {
+      "criterion": "Malformed inputs and dates outside approved 2026\u20132028 coverage are rejected.",
+      "satisfied": false,
+      "evidence": "Malformed/impossible search dates were independently rejected, but employer holidays dated 2025 and blackouts dated 2029 were independently accepted. Auxiliary date schemas use unrestricted calendarDateSchema rather than planningDateSchema."
+    },
+    {
+      "criterion": "Stable ranking, cross-year accounting and timezone-independent calendar arithmetic are visible and tested.",
+      "satisfied": true,
+      "evidence": "Ranking is cost then ISO start date and is explained in UI. Seeded oracle comparisons included year boundaries. Direct fixtures passed with process TZ changed to America/New_York, Pacific/Auckland and UTC; separate-process identical fixture runs remain unverified."
+    },
+    {
+      "criterion": "Editing/recalculation, accessible states, sharing privacy and intended browser/iOS behavior are verified.",
+      "satisfied": false,
+      "evidence": "Static inspection found stale-result clearing, result announcements/focus, actionable empty/error text and a share summary excluding balances and allowance. Component and browser runners were blocked before executing tests. No simulator/device execution was performed."
+    },
+    {
+      "criterion": "Required checks pass and fresh independent specialist evidence is available before acceptance.",
+      "satisfied": false,
+      "evidence": "Typecheck, lint, formatting and basic secret scan passed. Unit, component and browser suites were blocked by read-only cache restrictions. Additional independent domain/security review evidence was not supplied or consulted; coordinator verification remains pending."
+    }
+  ],
+  "tests": [
+    {
+      "command": "Node fs.readFileSync followed by fs.writeFileSync of identical bytes to src/domain/pto/calendar.ts",
+      "outcome": "passed",
+      "evidence": "Read succeeded; write denied with EPERM. Confirms source-write enforcement without modifying implementation."
+    },
+    {
+      "command": "git rev-parse HEAD; git diff --stat BASE TARGET; git diff BASE TARGET -- src/domain/pto",
+      "outcome": "passed",
+      "evidence": "HEAD was 4280c7b9b499b4a8cac297128027b4fb8bf81813. Read domain diff successfully. Git emitted denied /tmp/xcrun_db cache warnings. Initial untracked launcher artifacts were .review-permission-probe and node_modules."
+    },
+    {
+      "command": "npm run typecheck",
+      "outcome": "passed",
+      "evidence": "Exited 0 using the launcher-provided Node directory explicitly prepended to PATH."
+    },
+    {
+      "command": "npm run lint",
+      "outcome": "passed",
+      "evidence": "Exited 0."
+    },
+    {
+      "command": "npm run format:check",
+      "outcome": "passed",
+      "evidence": "Exited 0; all matched files use Prettier code style."
+    },
+    {
+      "command": "npm run check:secrets",
+      "outcome": "passed",
+      "evidence": "Exited 0; basic secret patterns and environment-file check passed. This is not exhaustive secret detection."
+    },
+    {
+      "command": "npm test -- --no-file-parallelism",
+      "outcome": "blocked",
+      "evidence": "Exited 1 before tests executed. Four suites could not load because Vite could not mkdir its temporary ssr cache: EPERM. Zero tests ran."
+    },
+    {
+      "command": "npm run test:components -- --cache=false",
+      "outcome": "blocked",
+      "evidence": "Exited 1 before test execution. Jest haste-map persistence attempted a denied write under the system temporary jest_dx directory despite cache=false."
+    },
+    {
+      "command": "npm run test:e2e",
+      "outcome": "blocked",
+      "evidence": "Exited 1 loading configuration because Playwright could not mkdir its transform cache: EPERM. No browser test executed."
+    },
+    {
+      "command": "Launcher Node runtime -e with in-memory TypeScript transpilation, assert/strict fixtures and independent seeded enumeration oracle",
+      "outcome": "passed",
+      "evidence": "Fixed zero/insufficient-balance and malformed-date assertions passed. All 500 seeded oracle comparisons passed for returned start dates and exact PTO dates across variable durations, balances, holidays, blackouts and year boundaries. TZ fixtures passed for America/New_York, Pacific/Auckland and UTC within one process. Twenty 366-day, 30-day-duration calculations took 219.8 ms on this runtime."
+    },
+    {
+      "command": "In-memory domain loader: ptoInputSchema.safeParse with a 2025 employer holiday and separately a 2029 blackout",
+      "outcome": "passed",
+      "evidence": "Reproduction confirmed both inputs return success=true despite approved instructions to reject dates outside 2026\u20132028 coverage."
+    },
+    {
+      "command": "npm audit --offline --omit=dev --audit-level=high",
+      "outcome": "passed",
+      "evidence": "Exited 0 and printed found 0 vulnerabilities. Offline output does not establish current registry advisory coverage."
+    }
+  ],
+  "findings": [
+    {
+      "id": "PTO-DOMAIN-01-F1",
+      "severity": "P2",
+      "file": "src/domain/pto/index.ts",
+      "line": 35,
+      "evidence": "Coverage validation applies only to search endpoints. holidaySchema.date at line 35 and dateRangeSchema endpoints at line 19 use calendarDateSchema, accepting years 1000\u20139999. Reproduction: use a valid July 2026 profile and add employerHolidays:[{date:'2025-07-03',name:'Outside'}], or blackouts:[{startDate:'2029-01-01',endDate:'2029-01-02'}]. Both safeParse calls succeed. This violates the approved coverage rejection rule and silently ignores out-of-coverage constraints rather than identifying the input mistake.",
+      "missingTests": [
+        "Reject employer holiday dates before 2026 and after 2028.",
+        "Reject blackout endpoints outside 2026\u20132028.",
+        "UI validation recovery for out-of-coverage holiday and blackout dates."
+      ],
+      "disposition": "open"
+    }
+  ],
+  "missingTestScenarios": [
+    "Coverage rejection for auxiliary holiday and blackout dates.",
+    "Identical complete domain fixtures executed in separate processes under multiple TZ environments.",
+    "Native share failure/manual fallback and web navigator.share cancellation/failure branches.",
+    "Measured first-value usability timing with representative users."
+  ],
+  "unverified": [
+    "Repository unit, component and browser suites could not execute because required cache writes were denied.",
+    "Browser navigation/back preservation, rendered focus/error behavior, narrow viewport layout and real sharing behavior were not independently exercised.",
+    "iOS simulator/device behavior, keyboard avoidance, VoiceOver and native sharing were not exercised; component mocks would not establish native acceptance.",
+    "Web/native exports were not generated in this read-only session.",
+    "Current dependency advisory coverage was not verified; audit was offline.",
+    "Additional independent domain/security specialist reviews are absent from this report and must be supplied separately.",
+    "Launcher session identity and coordinator acceptance remain pending external verification.",
+    "Unrelated foundation/review infrastructure changes in the broad base-to-target diff were outside this PTO-focused audit."
+  ],
+  "recommendation": "FAIL",
+  "coordinator": {
+    "verified": false,
+    "by": "01a1bdd7-54c2-7241-8846-686976a63a44",
+    "evidence": "Launcher rejected prepared dependency symlink as unexpected untracked content. No acceptance granted. Actual session identity attached from thread.started; findings and recommendation unchanged."
+  }
+}
