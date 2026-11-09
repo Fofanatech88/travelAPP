@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "taskId": "PTO-SECURITY-01",
+  "baseCommit": "25f3ea514101b76d0740ab697e5359216f56722f",
+  "reviewedCommit": "8bb93d19f0c92fb85189ec06be9b2e6adaba6d69",
+  "implementerSessionIds": ["01a1bdd7-54c2-7241-8846-686976a63a44"],
+  "highRiskAreas": ["private-data", "optimization"],
+  "specialistReviews": [],
+  "reviewer": {
+    "sessionId": "01a1c288-4ed7-7303-8be5-ed74ad923407",
+    "launchId": "d06db88a-6f95-4b89-808e-9538765e6aef",
+    "freshContext": true,
+    "isolation": {
+      "mode": "read-only",
+      "verified": true,
+      "evidence": "Session permissions specify read-only filesystem access with approvals unavailable. Reading .review-permission-probe returned source-write-probe; attempting printf probe >> .review-permission-probe was denied with operation not permitted, exit 1. No implementation files were modified. Git HEAD matches the target. Launcher must independently verify session provenance and final worktree integrity."
+    }
+  },
+  "scope": "Independent security-focused review of the target diff against plans/first-pto-sprint.md, including PTO validation/calculation, presentation, sharing, database configuration, invitation preview, local preview server, relevant tests and CI. No prior review reports or implementation explanations were read. No exploitable privacy or authorization defect was established by inspected application code: calculation uses local state, sharing constructs an explicit summary without balances, allowances or holiday names, and invitation routing grants no access. This is not coordinator acceptance or a complete review of all engineering tooling.",
+  "acceptanceCriteria": [
+    {
+      "criterion": "Anonymous calculation produces an explained result or actionable no-results without credentials or network.",
+      "satisfied": true,
+      "evidence": "PtoPlanner invokes calculatePto directly without database configuration or network calls. Independent in-memory execution produced an explained four-PTO-day result and no-results for insufficient balance."
+    },
+    {
+      "criterion": "Workweek, employer-confirmed holidays, duration, search period, blackouts and yearly balances consistently constrain results.",
+      "satisfied": true,
+      "evidence": "src/domain/pto/index.ts validates bounded inputs, counts Monday\u2013Friday dates, deduplicates explicitly supplied holidays, checks inclusive blackout intersections and rejects costs above each year's balance. Relevant existing fixtures were inspected; the complete suite could not execute."
+    },
+    {
+      "criterion": "Required PTO, holiday contribution and remaining balance reconcile; zero balance can produce a zero-PTO option.",
+      "satisfied": true,
+      "evidence": "Independent assertions verified four required PTO dates with one confirmed holiday, remaining balance 73 from 77, rejection with zero weekday balance and acceptance of a zero-balance weekend."
+    },
+    {
+      "criterion": "Malformed inputs are rejected and editing/recalculation updates accessible results.",
+      "satisfied": false,
+      "evidence": "Independent execution verified rejection of an impossible date. Static inspection shows edits clear results and share status. Component and browser execution were blocked by read-only cache restrictions, so interactive validation recovery and accessibility are unverified."
+    },
+    {
+      "criterion": "Stable ranking, cross-year behavior, assumptions and timezone independence are visible and tested.",
+      "satisfied": false,
+      "evidence": "Ranking, per-year accounting and assumptions are implemented and covered by inspected fixtures. Independent assertions passed in America/New_York, Pacific/Auckland and UTC, but the required complete fixtures, including cross-year cases, could not run through Vitest."
+    },
+    {
+      "criterion": "Sharing privacy and accessible platform behavior are reviewed, with native limitations reported honestly.",
+      "satisfied": false,
+      "evidence": "PtoPlanner.tsx:140 explicitly constructs a summary containing selected dates, duration, PTO cost and assumptions, excluding raw balances, allowances, blackouts and holiday names. shareSummary handles cancellation and manual fallback. Browser and native integration behavior were not independently executed."
+    },
+    {
+      "criterion": "Required automated checks, browser/iOS verification and fresh independent review evidence support completion.",
+      "satisfied": false,
+      "evidence": "Typecheck, lint, formatting and basic secret scanning passed. Unit, component and browser runners were blocked before test execution. Native execution and additional independent specialist reports are unavailable in this session."
+    }
+  ],
+  "tests": [
+    {
+      "command": "cat .review-permission-probe; printf probe >> .review-permission-probe",
+      "outcome": "passed",
+      "evidence": "Read succeeded; write was denied with operation not permitted and exit 1, as required for the isolation probe."
+    },
+    {
+      "command": "git diff --stat 25f3ea514101b76d0740ab697e5359216f56722f 8bb93d19f0c92fb85189ec06be9b2e6adaba6d69; git diff 25f3ea514101b76d0740ab697e5359216f56722f 8bb93d19f0c92fb85189ec06be9b2e6adaba6d69 -- src .env.example app.json; git rev-parse HEAD",
+      "outcome": "passed",
+      "evidence": "Diff inspection succeeded and HEAD matched the target. Git emitted denied temporary-cache warnings; commands returned exit 0."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run typecheck",
+      "outcome": "passed",
+      "evidence": "tsc --noEmit exited 0."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run lint",
+      "outcome": "passed",
+      "evidence": "eslint . exited 0."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run format:check",
+      "outcome": "passed",
+      "evidence": "Prettier reported all matched files formatted; exit 0."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm test -- --no-file-parallelism",
+      "outcome": "blocked",
+      "evidence": "Exit 1 before tests executed. All four suites encountered EPERM creating a temporary ssr directory. This establishes a sandbox limitation, not failing implementation assertions."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run test:components -- --cache=false",
+      "outcome": "blocked",
+      "evidence": "Exit 1 before tests executed: Jest attempted to persist a haste-map cache under the temporary directory and received EPERM despite cache=false."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run test:e2e",
+      "outcome": "blocked",
+      "evidence": "Exit 1 loading configuration: Playwright could not create its transform-cache directory due to EPERM. No browser tests ran."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run check:secrets",
+      "outcome": "passed",
+      "evidence": "Basic secret patterns and environment-file check passed, exit 0. This scanner is not comprehensive secret detection."
+    },
+    {
+      "command": "/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin/node -e '<in-memory TypeScript transpilation and node:assert/strict checks of calculatePto>'",
+      "outcome": "passed",
+      "evidence": "18 assertions passed across America/New_York, Pacific/Auckland and UTC: success, exact PTO count, remaining balance, insufficient balance, impossible-date rejection and zero-PTO weekend. Used a require.extensions TypeScript transpilation hook without file writes. Fixture: November 21\u201329, 2026, duration 9, allowance 143, balance 77, confirmed holiday November 26."
+    },
+    {
+      "command": "node via shell heredoc for independent domain and sharing assertions",
+      "outcome": "blocked",
+      "evidence": "Shell could not create a temporary heredoc file; no assertions executed. Domain assertions were subsequently rerun successfully using node -e; proposed sharing assertions were not executed."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm audit --offline --audit-level=high",
+      "outcome": "passed",
+      "evidence": "Exit 0, reported found 0 vulnerabilities. Offline output does not establish current advisory coverage or absence of dependency vulnerabilities."
+    }
+  ],
+  "findings": [],
+  "missingTestScenarios": [
+    "Browser tests do not assert that entering distinctive private balances, holiday names and blackout values creates no application network requests, URL changes or persistent storage writes.",
+    "Sharing coverage lacks executable browser navigator.share success, AbortError cancellation and non-cancellation rejection cases.",
+    "Native sharing coverage mocks dismissal but does not cover rejected Share.share calls and the resulting selectable manual fallback."
+  ],
+  "unverified": [
+    "Full unit, component and browser suites were blocked by enforced read-only cache restrictions.",
+    "Actual iOS keyboard behavior, VoiceOver announcements, native share sheet and selectable fallback were not executed on simulator or device.",
+    "Browser accessibility, focus, narrow viewport, navigation preservation, share fallback and pending-share races were inspected statically but not independently executed.",
+    "Complete required timezone fixtures, cross-year assertions and representative annual performance measurements were not executed.",
+    "Web and iOS exports were not performed in this read-only checkout.",
+    "Current dependency advisory status remains unverified; only an offline audit was run.",
+    "Additional independent security/domain specialist identities and reports must be attached by the coordinator; none were supplied or fabricated.",
+    "Reviewer session identity and launcher provenance remain pending external launcher verification.",
+    "Production hosting, access-log redaction, authentication, RLS and scoped guest authorization are not implemented or validated by this anonymous slice."
+  ],
+  "recommendation": "FAIL",
+  "coordinator": {
+    "verified": false,
+    "by": "01a1bdd7-54c2-7241-8846-686976a63a44",
+    "evidence": "Provenance checked: fresh thread.started=01a1c288-4ed7-7303-8be5-ed74ad923407; launcher exited 0; immutable target 8bb93d19f0c92fb85189ec06be9b2e6adaba6d69; read-only source probe passed and sentinel intact; session SHA256=024a9b8edcdd2e2a4799b967004a374e63e714aff03a93d5773e8cebb127b2f1. No final code findings. Completion withheld: required isolated unit/component/browser runners cannot write caches, and actual iOS execution remains blocked by missing Xcode. Coordinator checks passed (63 unit, five component, 12 browser, 39 PTO fixtures in three TZs); hosted verify passed on the reviewed source: https://github.com/Fofanatech88/travelAPP/actions/runs/42714357196/job/129491893153 . Reviewer FAIL recommendation is preserved; this is not Done/merge approval."
+  }
+}

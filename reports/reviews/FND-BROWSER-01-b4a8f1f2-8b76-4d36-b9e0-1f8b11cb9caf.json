@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "taskId": "FND-BROWSER-01",
+  "baseCommit": "25f3ea514101b76d0740ab697e5359216f56722f",
+  "reviewedCommit": "8bb93d19f0c92fb85189ec06be9b2e6adaba6d69",
+  "implementerSessionIds": ["01a1bdd7-54c2-7241-8846-686976a63a44"],
+  "highRiskAreas": [],
+  "specialistReviews": [
+    {
+      "kind": "domain",
+      "sessionId": "01a1c27a-b0cd-7be2-930b-2d9ced76e65b",
+      "reference": "reports/reviews/PTO-DOMAIN-01-c14b5bbb-9708-4d37-9f15-96294718a393.json"
+    },
+    {
+      "kind": "security",
+      "sessionId": "01a1c288-4ed7-7303-8be5-ed74ad923407",
+      "reference": "reports/reviews/PTO-SECURITY-01-d06db88a-6f95-4b89-808e-9538765e6aef.json"
+    }
+  ],
+  "reviewer": {
+    "sessionId": "01a1c27a-aaa4-7581-a639-107d805bd7a5",
+    "launchId": "b4a8f1f2-8b76-4d36-b9e0-1f8b11cb9caf",
+    "freshContext": true,
+    "isolation": {
+      "mode": "read-only",
+      "verified": true,
+      "evidence": "Session permissions specify read-only filesystem access and no escalation. Launcher supplied successful source-read/denied-source-write evidence. Independently read .review-permission-probe containing source-write-probe; opening that existing probe with Node fs.openSync(path, 'r+') returned EPERM. No implementation files were modified."
+    }
+  },
+  "scope": "Independent general engineering review of the supplied base-to-target diff, focused on browser PTO presentation, sharing, routing, tests and acceptance. Inspected underlying calculation code for integration consistency; this report does not provide specialist optimization or security approval. HEAD matches the target and the base is its ancestor. Prior reports were not opened. plans/git-browser-acceptance.md unexpectedly contained historical findings; those claims were not used as verification.",
+  "acceptanceCriteria": [
+    {
+      "criterion": "Anonymous calculation produces an explained result or actionable no-results without authentication or backend access.",
+      "satisfied": false,
+      "evidence": "Static inspection shows local calculatePto invocation and actionable no-results text. Independent component and browser execution was blocked by filesystem permissions, so required observable behavior remains unverified."
+    },
+    {
+      "criterion": "Allowance, balance, fixed Monday\u2013Friday workweek, confirmed holidays, search period, duration and blackouts consistently constrain results.",
+      "satisfied": false,
+      "evidence": "UI wiring and domain validation are present, including year-keyed budgets and blank additional-year inputs. Existing fixtures cover the main constraints, but no test assertions executed independently."
+    },
+    {
+      "criterion": "PTO dates, holiday contribution and remaining balances reconcile, including zero-balance and insufficient-balance cases.",
+      "satisfied": false,
+      "evidence": "Calculation code appears to count workdays and deduct costs per year consistently. Unit execution stopped before collection because Vitest could not create its transformation directory."
+    },
+    {
+      "criterion": "Invalid inputs are rejected and editing/recalculation preserves appropriate state while updating results.",
+      "satisfied": false,
+      "evidence": "Zod validation and stale-result clearing are implemented. Browser validation recovery, year switching and back-navigation preservation could not be independently exercised."
+    },
+    {
+      "criterion": "Stable ranking, cross-year behavior and calendar timezone independence are visible and tested.",
+      "satisfied": false,
+      "evidence": "UTC date helpers, deterministic ranking copy and cross-year fixtures exist. Runtime assertions and multiple-timezone fixture runs remain unverified."
+    },
+    {
+      "criterion": "Accessible result/error behavior and privacy-safe sharing work; native execution limitations are reported.",
+      "satisfied": false,
+      "evidence": "Labels, result focus, native announcements, restricted summary text and clipboard/manual fallbacks are present. Browser accessibility and sharing execution were blocked. simctl is unavailable; iOS runtime behavior was not verified."
+    },
+    {
+      "criterion": "Exported browser supports arbitrary invitation direct load/refresh, recovery and missing-asset 404 behavior.",
+      "satisfied": false,
+      "evidence": "Routing tests and local SPA fallback implementation exist. Export failed creating dist, and Playwright failed creating its transformation cache before browser execution."
+    },
+    {
+      "criterion": "Required type, lint, formatting, unit, component and browser checks actually pass independently.",
+      "satisfied": false,
+      "evidence": "Typecheck, lint, formatting and basic secret scan passed. Required executable tests and web export were blocked by read-only enforcement."
+    }
+  ],
+  "tests": [
+    {
+      "command": "git rev-parse HEAD; git merge-base --is-ancestor 25f3ea514101b76d0740ab697e5359216f56722f 8bb93d19f0c92fb85189ec06be9b2e6adaba6d69; git diff --check 25f3ea514101b76d0740ab697e5359216f56722f 8bb93d19f0c92fb85189ec06be9b2e6adaba6d69",
+      "outcome": "passed",
+      "evidence": "HEAD matched the target, ancestry command exited zero, and diff whitespace check reported no errors. Git emitted sandbox-related xcrun cache warnings."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run typecheck",
+      "outcome": "passed",
+      "evidence": "tsc --noEmit completed successfully."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run lint",
+      "outcome": "passed",
+      "evidence": "eslint . completed successfully."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run format:check",
+      "outcome": "passed",
+      "evidence": "Prettier reported all matched files use its code style."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm test",
+      "outcome": "blocked",
+      "evidence": "Four suites stopped before executing tests: EPERM creating a temporary ssr transformation directory. The runner-loader retry encountered the same permission restriction."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run test:components -- --cache=false",
+      "outcome": "blocked",
+      "evidence": "Jest could not open its temporary haste-map cache: EPERM. No component assertions executed."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run test:e2e",
+      "outcome": "blocked",
+      "evidence": "Playwright failed creating playwright-transform-cache-501/86 with EPERM before browser execution."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run build:web",
+      "outcome": "blocked",
+      "evidence": "Expo export failed with EPERM creating checkout/dist."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run check:secrets",
+      "outcome": "passed",
+      "evidence": "Basic secret patterns and environment-file check passed; this is a limited pattern scan."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm audit --audit-level=high --offline",
+      "outcome": "blocked",
+      "evidence": "Command printed found 0 vulnerabilities and exited zero, but offline execution does not establish current advisory coverage."
+    },
+    {
+      "command": "xcrun --find simctl",
+      "outcome": "blocked",
+      "evidence": "xcrun could not find simctl and also reported denied cache writes. Native simulator execution was unavailable."
+    }
+  ],
+  "findings": [],
+  "missingTestScenarios": [
+    "Browser sharing coverage for navigator.share success, AbortError cancellation and rejection followed by clipboard fallback.",
+    "Browser keyboard and screen-reader validation recovery, including locating the error summary from the calculate button.",
+    "Representative maximum-horizon performance assertion, including maximum supported blackout and holiday inputs."
+  ],
+  "unverified": [
+    "Required unit, component and browser assertions did not execute; acceptance remains Review Blocked.",
+    "Exported-browser narrow/wide layouts, result focus, direct invitation loads, refresh, missing assets and back-state preservation.",
+    "Actual browser clipboard and operating-system share behavior; existing browser fallback fixtures mock browser APIs.",
+    "iOS keyboard avoidance, accessibility, sharing, layout and navigation on simulator or device.",
+    "Multiple-timezone fixture execution and representative calculation runtime.",
+    "Current dependency advisory status; only offline audit was available.",
+    "Separate optimization/domain and security review evidence was not supplied or examined; no specialist approval is asserted.",
+    "Launcher must attach and verify the actual reviewer session identity and preserve this report; coordinator acceptance remains pending."
+  ],
+  "recommendation": "FAIL",
+  "coordinator": {
+    "verified": false,
+    "by": "01a1bdd7-54c2-7241-8846-686976a63a44",
+    "evidence": "Provenance checked: fresh thread.started=01a1c27a-aaa4-7581-a639-107d805bd7a5; launcher exited 0; immutable target 8bb93d19f0c92fb85189ec06be9b2e6adaba6d69; read-only source probe passed and sentinel intact; session SHA256=f1915dba190f19a843703acea29bdac5f4b65a5759de2050c8d2eaef77adb73b. No final code findings. Completion withheld: required isolated unit/component/browser runners cannot write caches, and actual iOS execution remains blocked by missing Xcode. Coordinator checks passed (63 unit, five component, 12 browser, 39 PTO fixtures in three TZs); hosted verify passed on the reviewed source: https://github.com/Fofanatech88/travelAPP/actions/runs/42714357196/job/129491893153 . Reviewer FAIL recommendation is preserved; this is not Done/merge approval."
+  }
+}
