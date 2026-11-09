@@ -40,6 +40,24 @@ describe('date-only calendar helpers', () => {
 });
 
 describe('PTO input boundaries', () => {
+  it.each([2025, 2029])(
+    'rejects holiday and blackout dates outside coverage: %s',
+    (year) => {
+      expect(
+        ptoInputSchema.safeParse({
+          ...base,
+          employerHolidays: [{ date: `${year}-07-03`, name: 'Outside' }],
+        }).success,
+      ).toBe(false);
+      for (const range of [
+        { startDate: `${year}-01-01`, endDate: '2028-12-31' },
+        { startDate: '2026-01-01', endDate: `${year}-12-31` },
+      ])
+        expect(
+          ptoInputSchema.safeParse({ ...base, blackouts: [range] }).success,
+        ).toBe(false);
+    },
+  );
   it.each([
     { duration: 0 },
     { duration: 31 },

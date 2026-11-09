@@ -252,3 +252,105 @@ for (const clipboardDenied of [false, true]) {
     ).toHaveCount(0);
   });
 }
+
+test('pending sharing cannot restore a stale summary after editing', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: undefined,
+    });
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: () =>
+          new Promise<void>((_resolve, reject) => {
+            (window as unknown as { rejectCopy: () => void }).rejectCopy = () =>
+              reject(new Error('Denied'));
+          }),
+      },
+    });
+  });
+  await page.goto('/pto');
+  await page
+    .getByLabel('Search from (YYYY-MM-DD)', { exact: true })
+    .fill('2026-11-21');
+  await page
+    .getByLabel('Search through (YYYY-MM-DD)', { exact: true })
+    .fill('2026-11-29');
+  await page.getByRole('button', { name: 'Find my vacation windows' }).click();
+  await page
+    .getByRole('button', { name: 'Share option 1', exact: true })
+    .click();
+  await page.getByLabel('Available PTO balance', { exact: true }).fill('0');
+  await page.evaluate(() =>
+    (window as unknown as { rejectCopy: () => void }).rejectCopy(),
+  );
+  await expect(
+    page.getByText('Select and copy this vacation summary:', { exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByText(/^Vacation idea:/)).toHaveCount(0);
+  await expect(
+    page.getByRole('heading', { name: 'Your vacation opportunities' }),
+  ).toHaveCount(0);
+});
+
+test('older share attempts cannot replace a newer completed attempt', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const pending: { resolve: () => void; reject: () => void }[] = [];
+    (window as unknown as { pendingCopies: typeof pending }).pendingCopies =
+      pending;
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: undefined,
+    });
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: () =>
+          new Promise<void>((resolve, reject) =>
+            pending.push({
+              resolve,
+              reject: () => reject(new Error('Denied')),
+            }),
+          ),
+      },
+    });
+  });
+  await page.goto('/pto');
+  await page
+    .getByLabel('Search from (YYYY-MM-DD)', { exact: true })
+    .fill('2026-11-21');
+  await page
+    .getByLabel('Search through (YYYY-MM-DD)', { exact: true })
+    .fill('2026-11-29');
+  await page.getByRole('button', { name: 'Find my vacation windows' }).click();
+  const share = page.getByRole('button', {
+    name: 'Share option 1',
+    exact: true,
+  });
+  await share.click();
+  await share.click();
+  await page.evaluate(() =>
+    (
+      window as unknown as { pendingCopies: { resolve: () => void }[] }
+    ).pendingCopies[1]!.resolve(),
+  );
+  await expect(
+    page.getByText('Vacation summary copied.', { exact: true }),
+  ).toBeVisible();
+  await page.evaluate(() =>
+    (
+      window as unknown as { pendingCopies: { reject: () => void }[] }
+    ).pendingCopies[0]!.reject(),
+  );
+  await expect(
+    page.getByText('Select and copy this vacation summary:', { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText('Vacation summary copied.', { exact: true }),
+  ).toBeVisible();
+});

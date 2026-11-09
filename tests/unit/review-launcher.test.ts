@@ -12,8 +12,8 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
-it.each(['startup-error', 'source-write'])(
-  'launcher preserves %s probe evidence and never starts a reviewer',
+it.each(['startup-error', 'source-write', 'success'])(
+  'launcher handles %s with prepared dependency links and preserved evidence',
   (failure) => {
     const directory = mkdtempSync(join(tmpdir(), 'review-launcher-test-'));
     const repo = join(directory, 'repo');
@@ -33,7 +33,18 @@ it.each(['startup-error', 'source-write'])(
         join(repo, 'requirements.md'),
         'Approved acceptance fixture.',
       );
-      git('add', 'requirements.md');
+      writeFileSync(join(repo, '.gitignore'), 'node_modules/\n');
+      mkdirSync(join(repo, 'tooling/codex/agents'), { recursive: true });
+      mkdirSync(join(repo, 'scripts/review'), { recursive: true });
+      writeFileSync(
+        join(repo, 'tooling/codex/agents/independent-reviewer.toml'),
+        'developer_instructions = "Review fixture"\n',
+      );
+      writeFileSync(
+        join(repo, 'scripts/review/report.mjs'),
+        'Fixture contract',
+      );
+      git('add', '.');
       git(
         '-c',
         'user.name=Review test',
@@ -46,6 +57,7 @@ it.each(['startup-error', 'source-write'])(
         'Fixture',
       );
       const target = git('rev-parse', 'HEAD');
+      mkdirSync(join(repo, 'node_modules'));
       // This fake CLI checks compatibility and failure handling only. It does
       // not establish OS sandbox isolation or execute a model session.
       writeFileSync(
@@ -56,6 +68,13 @@ const path = require('node:path');
 const args = process.argv.slice(2);
 if (args[0] !== 'sandbox') {
   fs.writeFileSync(${JSON.stringify(marker)}, 'unexpected reviewer');
+  if (${JSON.stringify(failure)} === 'success') {
+    fs.writeFileSync(args[args.indexOf('-o') + 1], JSON.stringify({
+      taskId: 'REV-FIXTURE', baseCommit: ${JSON.stringify(target)}, reviewedCommit: ${JSON.stringify(target)}, reviewer: {},
+    }));
+    process.stdout.write(JSON.stringify({ type: 'thread.started', thread_id: 'fixture-reviewer' }) + '\\n');
+    process.exit(0);
+  }
   process.exit(90);
 }
 if (args[args.indexOf('--permission-profile') + 1] !== ':read-only' ||
@@ -63,7 +82,9 @@ if (args[args.indexOf('--permission-profile') + 1] !== ':read-only' ||
   process.stderr.write('required --permission-profile missing');
   process.exit(2);
 }
-if (${JSON.stringify(failure)} === 'source-write') {
+if (${JSON.stringify(failure)} === 'success') {
+  process.stdout.write('READ_OK_WRITE_DENIED');
+} else if (${JSON.stringify(failure)} === 'source-write') {
   fs.writeFileSync(path.join(args[args.indexOf('-C') + 1], '.review-permission-probe'), 'changed');
   process.stdout.write('READ_OK_WRITE_DENIED');
 } else {
@@ -94,11 +115,12 @@ if (${JSON.stringify(failure)} === 'source-write') {
           },
         },
       );
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain(
-        'Read-only sandbox probe unavailable/failed',
-      );
-      expect(existsSync(marker)).toBe(false);
+      expect(result.status).toBe(failure === 'success' ? 0 : 1);
+      if (failure !== 'success')
+        expect(result.stderr).toContain(
+          'Read-only sandbox probe unavailable/failed',
+        );
+      expect(existsSync(marker)).toBe(failure === 'success');
       const evidenceFolder = readdirSync(directory).find((name) =>
         name.startsWith('together-review-'),
       );

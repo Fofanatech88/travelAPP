@@ -16,7 +16,7 @@ const planningDateSchema = calendarDateSchema.refine(
   'Choose a planning date from 2026 through 2028.',
 );
 const dateRangeSchema = z
-  .strictObject({ startDate: calendarDateSchema, endDate: calendarDateSchema })
+  .strictObject({ startDate: planningDateSchema, endDate: planningDateSchema })
   .refine(({ startDate, endDate }) => startDate <= endDate, {
     message: 'End date must be on or after start date.',
     path: ['endDate'],
@@ -32,7 +32,7 @@ const budgetSchema = z
     path: ['balance'],
   });
 const holidaySchema = z.strictObject({
-  date: calendarDateSchema,
+  date: planningDateSchema,
   name: z.string().trim().min(1).max(100),
 });
 

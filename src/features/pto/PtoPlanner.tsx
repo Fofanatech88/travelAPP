@@ -66,6 +66,7 @@ export function PtoPlanner() {
   const [shareStatus, setShareStatus] = useState('');
   const [manualSummary, setManualSummary] = useState('');
   const [options, setOptions] = useState<VacationOpportunity[] | null>(null);
+  const shareAttempt = useRef(0);
   const resultRef = useRef<ComponentRef<typeof View>>(null);
   useEffect(() => {
     if (options === null) return;
@@ -82,6 +83,7 @@ export function PtoPlanner() {
   const currentBudget = budgets[startYear] ?? emptyBudget;
   const nextBudget = budgets[endYear] ?? emptyBudget;
   function edited(change: () => void) {
+    shareAttempt.current += 1;
     change();
     setOptions(null);
     setError('');
@@ -135,9 +137,12 @@ export function PtoPlanner() {
     setOptions(optimizePto(parsed.data));
   }
   async function share(option: VacationOpportunity) {
+    const attempt = ++shareAttempt.current;
     const summary = `Vacation idea: ${option.startDate} to ${option.endDate}. ${option.daysAway} days away using ${option.ptoDates.length} PTO days, assuming Monday–Friday work and confirmed employer holidays. Leave still requires employer approval.`;
     setManualSummary('');
+    setShareStatus('');
     const outcome = await shareSummary(summary);
+    if (attempt !== shareAttempt.current) return;
     setShareStatus(
       {
         shared: 'Vacation summary shared.',

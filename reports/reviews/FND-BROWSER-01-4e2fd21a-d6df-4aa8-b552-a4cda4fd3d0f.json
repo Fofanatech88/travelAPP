@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "taskId": "FND-BROWSER-01",
+  "baseCommit": "25f3ea514101b76d0740ab697e5359216f56722f",
+  "reviewedCommit": "4280c7b9b499b4a8cac297128027b4fb8bf81813",
+  "implementerSessionIds": ["01a1bdd7-54c2-7241-8846-686976a63a44"],
+  "highRiskAreas": ["private-data", "optimization"],
+  "specialistReviews": [],
+  "reviewer": {
+    "sessionId": "01a1c26f-0be0-7220-804b-9084af77757c",
+    "launchId": "4e2fd21a-d6df-4aa8-b552-a4cda4fd3d0f",
+    "freshContext": true,
+    "isolation": {
+      "mode": "read-only",
+      "verified": true,
+      "evidence": "Session permissions explicitly enforce read-only filesystem access with approvals disabled. Launcher supplied successful source-read/denied-source-write probe evidence. Reading .review-permission-probe returned source-write-probe. Independently executed export and test commands also encountered EPERM on writes. No implementation files were modified."
+    }
+  },
+  "scope": "Independent static comparison of the browser foundation, routes, anonymous PTO form/results, sharing boundary and associated tests against plans/first-pto-sprint.md. Inspected base-to-target diff and confirmed HEAD equals target. Domain code inspected for integration contracts; additional independent security/domain reviews remain required. Prior review reports and implementation summaries were not used as evidence.",
+  "acceptanceCriteria": [
+    {
+      "criterion": "Anonymous user receives a correct explained result or actionable no-results without credentials, network or authentication.",
+      "satisfied": false,
+      "evidence": "Code invokes the local deterministic engine and supplies no-results guidance without an authentication boundary. Required browser/component execution was blocked before tests ran, so observable acceptance remains unverified."
+    },
+    {
+      "criterion": "Allowance, balance, Monday\u2013Friday workweek, explicitly entered holidays, duration, search period and blackouts consistently affect results.",
+      "satisfied": false,
+      "evidence": "Static inspection shows these values passed through Zod validation into optimizePto; budgets are keyed by year and additional-year fields default empty. Runtime integration checks could not execute."
+    },
+    {
+      "criterion": "Required PTO dates, confirmed holidays and remaining yearly balances reconcile, including zero balance and cross-year behavior.",
+      "satisfied": false,
+      "evidence": "Implementation exposes the relevant breakdown and browser fixtures assert specific counts and explicit cross-year budgets. Independent unit and browser suites were blocked by filesystem permissions."
+    },
+    {
+      "criterion": "Invalid inputs are rejected and editing/recalculation updates results while preserving draft navigation state.",
+      "satisfied": false,
+      "evidence": "Synchronous edits clear results and validation errors; browser tests cover invalid-date recovery and return navigation. Asynchronous share completion can restore stale output after an edit; navigation preservation was not independently executed."
+    },
+    {
+      "criterion": "Stable ranking, source assumptions and timezone-independent calendar calculations are visible and tested.",
+      "satisfied": false,
+      "evidence": "Static code uses centralized UTC calendar arithmetic and displays ranking, coverage and employer-confirmation assumptions. Independent timezone fixtures could not run."
+    },
+    {
+      "criterion": "Accessible browser states, sharing privacy and intended iOS behavior are verified or limitations explicitly reported.",
+      "satisfied": false,
+      "evidence": "Labels, alert semantics, result focus and selectable share fallback exist in code. Browser/component execution was blocked; iOS execution was not performed. Sharing has an unresolved stale-completion race."
+    },
+    {
+      "criterion": "Production-mode local browser export supports arbitrary invitation paths, refresh, safe placeholders and missing-asset 404 responses.",
+      "satisfied": false,
+      "evidence": "SPA output, fallback server and browser fixtures exist. Export failed creating dist under read-only enforcement; Playwright failed creating its transform cache before browser execution."
+    }
+  ],
+  "tests": [
+    {
+      "command": "git rev-parse HEAD; git diff 25f3ea514101b76d0740ab697e5359216f56722f 4280c7b9b499b4a8cac297128027b4fb8bf81813 -- src/app src/features/pto src/services/sharing tests/e2e scripts/preview.mjs app.json",
+      "outcome": "passed",
+      "evidence": "HEAD matched the supplied target; inspected relevant added implementation and tests. Git emitted denied temporary-cache warnings but returned the requested revision/diff."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run typecheck",
+      "outcome": "passed",
+      "evidence": "Exit 0."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run lint",
+      "outcome": "passed",
+      "evidence": "Exit 0."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run format:check",
+      "outcome": "passed",
+      "evidence": "Exit 0; all matched files use Prettier code style."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm test -- --no-file-parallelism",
+      "outcome": "blocked",
+      "evidence": "Exit 1; four suites could not load because mkdir of a temporary ssr cache returned EPERM. No tests executed."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run test:components -- --cache=false",
+      "outcome": "blocked",
+      "evidence": "Exit 1; Jest attempted to persist a haste-map under jest_dx and received EPERM before component execution."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run test:e2e -- --reporter=line",
+      "outcome": "blocked",
+      "evidence": "Exit 1; Playwright transform-cache mkdir returned EPERM before browser execution."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run build:web",
+      "outcome": "blocked",
+      "evidence": "Exit 1; Expo could not create checkout/dist because of EPERM."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm run check:secrets",
+      "outcome": "passed",
+      "evidence": "Exit 0; basic secret-pattern and environment-file checks passed."
+    },
+    {
+      "command": "PATH=/Users/ismailfofana/.npm/_npx/387698761821791d/node_modules/node/bin:$PATH npm audit --offline --audit-level=high",
+      "outcome": "passed",
+      "evidence": "Exit 0; reported zero vulnerabilities in offline mode. This does not establish current advisory coverage."
+    }
+  ],
+  "findings": [
+    {
+      "id": "FND-BROWSER-01-ASYNC-SHARE",
+      "severity": "P2",
+      "file": "src/features/pto/PtoPlanner.tsx",
+      "line": 140,
+      "evidence": "share() captures an option and awaits shareSummary(), then unconditionally writes shareStatus/manualSummary at lines 141\u2013149. edited() clears those fields but does not invalidate pending share operations. Reproduction: delay clipboard.writeText, click Share, edit the balance so results disappear, then reject the clipboard promise. The pending handler restores the previous option's selectable summary despite the changed inputs. Existing E2E tests await completed sharing before editing, so they miss this ordering. This is a static control-flow finding; runtime reproduction was blocked.",
+      "missingTests": [
+        "Deferred share/clipboard completion after a form edit must not restore an obsolete summary or success status.",
+        "Out-of-order completion of multiple share attempts must not overwrite the latest state."
+      ],
+      "disposition": "open"
+    }
+  ],
+  "missingTestScenarios": [
+    "Pending share completion after input edits and out-of-order share completions.",
+    "Browser Web Share API success, cancellation and non-cancellation rejection paths; existing browser coverage exercises clipboard fallbacks.",
+    "Browser timezone variants and real iOS keyboard, accessibility and share-sheet behavior."
+  ],
+  "unverified": [
+    "Required independent browser execution and production-mode export are blocked by enforced filesystem permissions; browser acceptance cannot be certified.",
+    "Unit fixtures, multi-timezone results and component behavior were not independently executed.",
+    "Real iOS simulator/device behavior, keyboard safety, VoiceOver and native sharing were not verified.",
+    "Fresh independent security and domain specialist reviews were not supplied; no specialist identity or approval is inferred.",
+    "Current dependency advisory coverage is unavailable from the offline audit result.",
+    "Production-host routing, security headers, logging, universal links and hosted enforcement were not verified.",
+    "Reviewer session identity remains pending launcher attachment; coordinator acceptance is pending."
+  ],
+  "recommendation": "FAIL",
+  "coordinator": {
+    "verified": false,
+    "by": "01a1bdd7-54c2-7241-8846-686976a63a44",
+    "evidence": "Launcher rejected prepared dependency symlink as unexpected untracked content. No acceptance granted. Actual session identity attached from thread.started; findings and recommendation unchanged."
+  }
+}
